@@ -18,17 +18,17 @@ def images():
             images[image.attrs["RepoTags"][0]] = image.attrs
     return jsonify(result=images)
 
-@app.route("/images/dangling")
-def dangling_images():
-    images = []
-    for image in client.images.list(filters={'dangling': True}):
-        images.append(image.attrs)
-    return jsonify(result=images)
-
 @app.route("/images/all")
 def all_images():
     images = []
     for image in client.images.list(all=True):
+        images.append(image.attrs)
+    return jsonify(result=images)
+
+@app.route("/images/dangling")
+def dangling_images():
+    images = []
+    for image in client.images.list(filters={'dangling': True}):
         images.append(image.attrs)
     return jsonify(result=images)
 
