@@ -1,6 +1,6 @@
-# Docker browser
+# Docker browser (WIP)
 
-Display your Docker objects (containers, images, layers, volumes etc.)
+Display your Docker objects (containers, images, layers, volumes etc.) and easily identify which volumes are used by which containers; which layers are used by which images etc.
 
 ## Usage
 
@@ -11,41 +11,7 @@ docker run -d -p 5000:5000 -v /var/run/docker.sock:/var/run/docker.sock docker-b
 
 ## API
 
-#### Images
-
-List images metadata per image:
-
-```
-GET /images
-```
-
-List all images:
-
-```
-GET /images/all
-```
-
-List dangling images:
-
-```
-GET /images/dangling
-```
-
-#### Containers
-
-List all containerss
-
-```
-GET /containers
-```
-
-#### Volumes
-
-List all volumes:
-
-```
-/volumes
-```
+See the [API documentation](./doc/README.md).
 
 ## TODO
 
@@ -58,4 +24,3 @@ List all volumes:
     - [ ] Dislayb link between image & layers
 - Project:
     - [ ] Scaffold Vue.js part
-    - [ ] Dockerize
