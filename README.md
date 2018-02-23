@@ -2,6 +2,13 @@
 
 Display your Docker objects (containers, images, layers, volumes etc.)
 
+## Usage
+
+```
+docker build -t docker-browser .
+docker run -d -p 5000:5000 -v /var/run/docker.sock:/var/run/docker.sock docker-browser:latest
+```
+
 ## API
 
 #### Images
