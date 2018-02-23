@@ -44,8 +44,16 @@ def volumes():
 #### Containers
 @app.route("/containers")
 def containers():
-    containers = []
+    containers = {}
     for container in client.containers.list():
+        if container.attrs["Name"]:
+            containers[container.attrs["Name"].strip('/')] = container.attrs
+    return jsonify(result=containers)
+
+@app.route("/containers/all")
+def all_containers():
+    containers = []
+    for container in client.containers.list(all=True):
         containers.append(container.attrs)
     return jsonify(result=containers)
 
