@@ -19,19 +19,19 @@ def images():
             images[image.attrs["RepoTags"][0]] = image.attrs
     return jsonify(result=images)
 
-@app.route("/images/all")
-def all_images():
-    images = []
-    for image in client.images.list(all=True):
-        images.append(image.attrs)
-    return jsonify(result=images)
-
 @app.route("/images/dangling")
 def dangling_images():
     images = []
     for image in client.images.list(filters={'dangling': True}):
         images.append(image.attrs)
     return jsonify(result=images)
+
+@app.route("/images/used_by/<container_id>")
+def used_by(container_id):
+    images = []
+    c = client.containers.get(container_id)
+    if(c.attrs["Image"]):
+        return jsonify(result=c.attrs["Image"])
 
 #### Volumes
 @app.route("/volumes")
@@ -50,11 +50,12 @@ def containers():
             containers[container.attrs["Name"].strip('/')] = container.attrs
     return jsonify(result=containers)
 
-@app.route("/containers/all")
-def all_containers():
-    containers = []
-    for container in client.containers.list(all=True):
-        containers.append(container.attrs)
+@app.route("/containers/exited")
+def exited_containers():
+    containers = {}
+    for container in client.containers.list(filters={'status': 'exited'}):
+        if container.attrs["Name"]:
+            containers[container.attrs["Name"].strip('/')] = container.attrs
     return jsonify(result=containers)
 
 #### Main
