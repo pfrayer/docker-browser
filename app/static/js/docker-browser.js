@@ -9,7 +9,7 @@ $(document).ready(function() {
     success: function(data) {
       containers = data.result;
       for(container in containers) {
-        $('#containers').append('<div class="container active" id="'+containers[container]["Id"]+'" style="background-color: '+hashStringToColor(containers[container]["Id"])+';"><b>' + containers[container]["Id"].substring(0,12) + '</b><br/>' + container + '</div>');
+        $('#containers-active').append('<div class="container active" id="'+containers[container]["Id"]+'" style="background-color:'+hashStringToColor(containers[container]["Id"])+';"><b>' + containers[container]["Id"].substring(0,12) + '</b><br/>' + container + '</div>');
       }
     }
   });
@@ -30,7 +30,7 @@ $(document).ready(function() {
   }).then(function(data) {
     images = data.result;
     for(image in images) {
-      $('#images').append('<div class="image active" id="'+images[image]["Id"].substring(7,72)+'" style="background-color: '+hashStringToColor(images[image]["Id"])+';"><b>' + images[image]["Id"].substring(7,19) + '</b><br/>' + image +'</div>');
+      $('#images-active').append('<div class="image active" id="'+images[image]["Id"].substring(7,72)+'" style="background-color:'+hashStringToColor(images[image]["Id"])+';"><b>' + images[image]["Id"].substring(7,19) + '</b><br/>' + image +'</div>');
     }
   });
 
@@ -43,6 +43,47 @@ $(document).ready(function() {
       $('#images-dangling').append('<div class="image dangling">' + images_dangling[image]["Id"].substring(7,19) + '<br/>&ltnone&gt:&ltnone&gt</div>');
     }
   });
+
+  // Load volumes :
+  $.ajax({
+    url: "http://127.0.0.1:5000/volumes"
+  }).then(function(data) {
+    volumes = data.result;
+    for(volume in volumes) {
+      $('#volumes-active').append('<div class="volume active" id="'+volume+'" style="background-color:'+hashStringToColor(volume)+';"><b>' + volume.substring(0,12) + '</b><br/>' + volumes[volume]["Driver"] +'</div>');
+    }
+  });
+
+  // Load dangling volumes :
+  $.ajax({
+    url: "http://127.0.0.1:5000/volumes/dangling"
+  }).then(function(data) {
+    volumes = data.result;
+    for(volume in volumes) {
+      $('#volumes-dangling').append('<div class="volume dangling"><b>' + volume.substring(0,12) + '</b><br/>' + volumes[volume]["Driver"] +'</div>');
+    }
+  });
+
+  // Load networks :
+  $.ajax({
+    url: "http://127.0.0.1:5000/networks"
+  }).then(function(data) {
+    networks = data.result;
+    for(network in networks) {
+      $('#networks-active').append('<div class="network active" id="'+networks[network]["Id"]+'" style="background-color:'+hashStringToColor(network)+';"><b>' + network + '</b><br/>' + networks[network]["Id"].substring(0,12) +'</div>');
+    }
+  });
+
+  // Load dangling networks :
+  $.ajax({
+    url: "http://127.0.0.1:5000/networks/dangling"
+  }).then(function(data) {
+    networks = data.result;
+    for(network in networks) {
+      $('#networks-dangling').append('<div class="network dangling"><b>' + network + '</b><br/>' + networks[network]["Id"].substring(0,12) +'</div>');
+    }
+  });
+
 
 
   $(document).on("click", ".container", function() {
@@ -58,16 +99,36 @@ $(document).ready(function() {
       $("#"+image.substring(7,72)).addClass("selected");
       $("#"+image.substring(7,72)).addClass("active");
     });
+
+    $.ajax({
+      url: "http://127.0.0.1:5000/volumes/used_by/"+container
+    }).then(function(data) {
+      volumes = data.result;
+      for(volume in volumes) {
+        $("#"+volume).addClass("selected");
+        $("#"+volume).addClass("active");
+      }
+    });
+
+    $.ajax({
+      url: "http://127.0.0.1:5000/networks/used_by/"+container
+    }).then(function(data) {
+      networks = data.result;
+      for(network in networks) {
+        $("#"+networks[network]["NetworkID"]).addClass("selected");
+        $("#"+networks[network]["NetworkID"]).addClass("active");
+      }
+    });
   });
 
   $('#refresh').click(function() {
     location.reload();
-});
+  });
 });
 
 
 function djb2(str){
-  var hash = 5381;
+  var hash = 7536;
   for (var i = 0; i < str.length; i++) {
     hash = ((hash << 5) + hash) + str.charCodeAt(i); /* hash * 33 + c */
   }

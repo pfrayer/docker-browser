@@ -12,8 +12,17 @@ body {
   padding: 15px;
 }
 
-#containers, #images, #layers, #images-dangling, #containers-exited {
+#containers, #images, #networks, #volumes {
+  margin: 10px;
+  padding: 5px;
+}
+
+#containers-active, #images-active, #layers, #images-dangling, #containers-exited, #volumes-dangling, #volumes-active, #networks-dangling, #networks-active, #containers, #images {
   clear: left;
+}
+
+#networks-active, #networks-dangling {
+  clear: right;
 }
 
 .dangling, .exited {
@@ -34,14 +43,18 @@ body {
   clear: all;
 }
 
-.image, .container {
-
+.image, .container, .volume, .network {
+  cursor: pointer;
   border: 1px solid black;
   float: left;
   margin: 5px;
   padding: 5px;
   background-color: gray;
   opacity: 0.2;
+}
+
+.network {
+  float: right;
 }
 
 .active {

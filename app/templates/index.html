@@ -9,25 +9,33 @@
     <body>
       <div id="docker-browser">
 
-        <div id="volumes">
-          <h2>Volumes</h2>
-        </div>
+      <div id="volumes">
+        <h2>Volumes</h2>
+        <div id="volumes-active"></div>
+        <div id="volumes-dangling"></div>
+      </div>
 
-        <div id="networks">
-          <h2>Networks</h2>
-        </div>
+      <div id="networks">
+        <h2>Networks</h2>
+        <div id="networks-active"></div>
+        <div id="networks-dangling"></div>
+      </div>
 
-        <span class="clear"></span>
+      <span class="clear"></span>
 
-        <div id="containers">
-          <h2>Containers</h2>
-        </div>
+      <div id="containers">
+        <h2>Containers</h2>
+        <div id="containers-active"></div>
         <div id="containers-exited"></div>
+        <span class="clear"></span>
+      </div>
 
-        <div id="images">
-          <h2>Images</h2>
-        </div>
+      <div id="images">
+        <h2>Images</h2>
+        <div id="images-active"></div>
         <div id="images-dangling"></div>
+        <span class="clear"></span>
+      </div>
 
         <div id="layers">
           <h2>Layers</h2>
