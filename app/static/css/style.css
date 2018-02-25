@@ -7,9 +7,10 @@ body {
 
 #docker-browser {
   background-color: white;
-  width: 65%;
+  width: 50%;
   margin: auto;
   padding: 15px;
+  border-radius: 15px
 }
 
 #containers, #images, #networks, #volumes {
@@ -51,6 +52,12 @@ body {
   padding: 5px;
   background-color: gray;
   opacity: 0.2;
+}
+
+.volume, .network {
+  margin: 3px;
+  padding: 3px;
+  line-height: 1.2;
 }
 
 .network {

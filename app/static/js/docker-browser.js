@@ -55,14 +55,14 @@ $(document).ready(function() {
   });
 
   // Load dangling volumes :
-  $.ajax({
-    url: "http://127.0.0.1:5000/volumes/dangling"
-  }).then(function(data) {
-    volumes = data.result;
-    for(volume in volumes) {
-      $('#volumes-dangling').append('<div class="volume dangling"><b>' + volume.substring(0,12) + '</b><br/>' + volumes[volume]["Driver"] +'</div>');
-    }
-  });
+  // $.ajax({
+  //   url: "http://127.0.0.1:5000/volumes/dangling"
+  // }).then(function(data) {
+  //   volumes = data.result;
+  //   for(volume in volumes) {
+  //     $('#volumes-dangling').append('<div class="volume dangling"><b>' + volume.substring(0,12) + '</b><br/>' + volumes[volume]["Driver"] +'</div>');
+  //   }
+  // });
 
   // Load networks :
   $.ajax({
