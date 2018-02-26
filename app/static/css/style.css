@@ -44,9 +44,11 @@ body {
   clear: all;
 }
 
-.image, .container, .volume, .network {
+.container {
   cursor: pointer;
-  border: 1px solid black;
+}
+
+.image, .container, .volume, .network {
   float: left;
   margin: 5px;
   padding: 5px;
@@ -65,9 +67,5 @@ body {
 }
 
 .active {
-  opacity: 1;
-}
-
-.selected {
-  border: 1px solid red!important;
+  opacity: 0.70;
 }

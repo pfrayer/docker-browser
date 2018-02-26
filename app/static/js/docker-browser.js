@@ -91,6 +91,7 @@ $(document).ready(function() {
     $(".active").removeClass("active");
     $(this).addClass("selected");
     $(this).addClass("active");
+    $(this).css({'box-shadow' : '0px 0px 15px '+$(this).css('background-color')})
     container = $(this).attr("id");
     $.ajax({
       url: "http://127.0.0.1:5000/images/used_by/"+container
@@ -98,6 +99,7 @@ $(document).ready(function() {
       image = data.result;
       $("#"+image.substring(7,72)).addClass("selected");
       $("#"+image.substring(7,72)).addClass("active");
+      $("#"+image.substring(7,72)).css({'box-shadow' : '0px 0px 15px '+ $("#"+image.substring(7,72)).css('background-color') })
     });
 
     $.ajax({
@@ -107,6 +109,7 @@ $(document).ready(function() {
       for(volume in volumes) {
         $("#"+volume).addClass("selected");
         $("#"+volume).addClass("active");
+        $("#"+volume).css({'box-shadow' : '0px 0px 15px '+ $("#"+volume).css('background-color') })
       }
     });
 
@@ -117,6 +120,7 @@ $(document).ready(function() {
       for(network in networks) {
         $("#"+networks[network]["NetworkID"]).addClass("selected");
         $("#"+networks[network]["NetworkID"]).addClass("active");
+        $("#"+networks[network]["NetworkID"]).css({'box-shadow' : '0px 0px 15px '+ $("#"+networks[network]["NetworkID"]).css('background-color') })
       }
     });
   });
