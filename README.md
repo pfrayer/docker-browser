@@ -1,6 +1,8 @@
 # Docker browser (WIP)
 
-Display your Docker objects (containers, images, layers, volumes etc.) and easily identify which volumes are used by which containers; which layers are used by which images etc.
+Visualize your Docker objects (containers, images, volumes...) and easily identify which volumes and networks are used by which containers; which layers are used by which images etc.
+
+![Docker browser](/doc/demo.gif?raw=true)
 
 ## Usage
 
@@ -23,4 +25,4 @@ See the [API documentation](./doc/README.md).
     - [ ] Display layers
     - [ ] Dislayb link between image & layers
 - Project:
-    - [ ] Scaffold Vue.js part
+    - [ ] Push image to Docker hub
