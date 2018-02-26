@@ -14,29 +14,21 @@ def hello():
 
 @app.route("/containers")
 def containers():
-    pretty_containers=named_containers(client.containers.list())
-    return jsonify(result=pretty_containers)
-
+    return jsonify( result=named_containers(client.containers.list()) )
 
 @app.route("/containers/exited")
 def exited_containers():
-    pretty_containers=named_containers(client.containers.list(filters={'status': 'exited'}))
-    return jsonify(result=pretty_containers)
+    return jsonify( result=named_containers(client.containers.list(filters={'status': 'exited'})) )
+
 
 
 @app.route("/images")
 def images():
-    pretty_images=named_images(client.images.list())
-    return jsonify(result=pretty_images)
-
+    return jsonify( result=named_images(client.images.list()) )
 
 @app.route("/images/dangling")
 def dangling_images():
-    images = []
-    for image in client.images.list(filters={'dangling': True}):
-        images.append(image.attrs)
-    return jsonify(result=images)
-
+    return jsonify( result=named_images(client.images.list(filters={'dangling': True})) )
 
 @app.route("/images/used_by/<container_id>")
 def image_used_by(container_id):
@@ -47,19 +39,21 @@ def image_used_by(container_id):
 
 @app.route("/volumes")
 def volumes():
-    pretty_volumes=named_volumes(client.volumes.list())
-    return jsonify(result=pretty_volumes)
+    return jsonify( result=named_volumes(client.volumes.list()) )
 
 @app.route("/volumes/dangling")
 def dangling_volumes():
-    pretty_volumes=named_volumes(client.volumes.list(filters={'dangling': True}))
-    return jsonify(result=pretty_volumes)
+    return jsonify( result=named_volumes(client.volumes.list(filters={'dangling': True})) )
 
 @app.route("/volumes/used_by/<container_id>")
 def volumes_used_by(container_id):
+    volumes = {}
     container = client.containers.get(container_id)
-    if container.attrs["Config"]["Volumes"]:
-        return jsonify(result=container.attrs["Config"]["Volumes"])
+    if container.attrs["Mounts"]:
+        for mount in container.attrs["Mounts"]:
+            if mount["Type"] == "volume":
+                volumes[mount["Name"]] = mount
+    return jsonify(result=volumes)
 
 
 @app.route("/networks")
@@ -87,8 +81,6 @@ def networks_used_by(container_id):
         return jsonify(result=container.attrs["NetworkSettings"]["Networks"])
 
 # Make pretty maps from Docker API:
-
-
 def named_containers(api_containers):
     containers = {}
     for container in api_containers:
@@ -117,6 +109,6 @@ def named_networks(api_networks):
             networks[network.attrs["Name"]] = network.attrs
     return networks
 
-#### Main
+# Main
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
