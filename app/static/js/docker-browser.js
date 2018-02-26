@@ -55,14 +55,14 @@ $(document).ready(function() {
   });
 
   // Load dangling volumes :
-  // $.ajax({
-  //   url: "http://"+window.location.hostname+":5000/volumes/dangling"
-  // }).then(function(data) {
-  //   volumes = data.result;
-  //   for(volume in volumes) {
-  //     $('#volumes-dangling').append('<div class="volume dangling"><b>' + volume.substring(0,12) + '</b><br/>' + volumes[volume]["Driver"] +'</div>');
-  //   }
-  // });
+  $.ajax({
+    url: "http://"+window.location.hostname+":5000/volumes/dangling"
+  }).then(function(data) {
+    volumes = data.result;
+    for(volume in volumes) {
+      $('#volumes-dangling').append('<div class="volume dangling"><b>' + volume.substring(0,12) + '</b><br/>' + volumes[volume]["Driver"] +'</div>');
+    }
+  });
 
   // Load networks :
   $.ajax({
@@ -107,9 +107,9 @@ $(document).ready(function() {
     }).then(function(data) {
       volumes = data.result;
       for(volume in volumes) {
-        $("#"+volume).addClass("selected");
-        $("#"+volume).addClass("active");
-        $("#"+volume).css({'box-shadow' : '0px 0px 15px '+ $("#"+volume).css('background-color') })
+        $("#"+volumes[volume]["Name"]).addClass("selected");
+        $("#"+volumes[volume]["Name"]).addClass("active");
+        $("#"+volumes[volume]["Name"]).css({'box-shadow' : '0px 0px 15px '+ $("#"+volume).css('background-color') })
       }
     });
 
