@@ -2,11 +2,12 @@
 <html>
     <head>
         <title>Docker Browser</title>
+        <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
         <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/docker-browser.js') }}"></script>
-        <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     </head>
     <body>
+      <div class="se-pre-con"></div>
       <div id="docker-browser">
       <button id="refresh">Refresh</button>
 
@@ -38,9 +39,11 @@
         <span class="clear"></span>
       </div>
 
-        <div id="layers">
-          <h2>Layers</h2>
-        </div>
+      <div id="layers">
+        <div id="layers-active"></div>
+        <div id="layers-dangling"></div>
+        <h2>Layers</h2>
+      </div>
 
       </div>
     </body>

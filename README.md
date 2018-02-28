@@ -13,6 +13,8 @@ docker run -d \
   pfrayer/docker-browser
 ```
 
+Then open `http://<hostname>:5000` in your favourite browser and click on a container.
+
 ## API
 
 See the [API documentation](./doc/README.md).

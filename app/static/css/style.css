@@ -56,11 +56,10 @@ body {
   border-radius: 3px;
 }
 
-#images, #containers, #volumes, #networks {
+#images, #containers, #volumes, #networks, #layers {
   margin: 5px;
   padding: 5px;
   border-radius: 5px;
-  overflow: hidden;
 }
 
 .volume, .network, .image {
@@ -75,4 +74,16 @@ body {
 
 .active {
   opacity: 0.70;
+}
+
+.no-js #loader { display: none;  }
+.js #loader { display: block; position: absolute; left: 100px; top: 0; }
+.se-pre-con {
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: url(/static/images/preloader.gif)  center no-repeat #fff;
 }

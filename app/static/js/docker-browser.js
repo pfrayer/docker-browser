@@ -1,16 +1,40 @@
 $(document).ready(function() {
 
-  // Init all data:
-  var images, images_dangling, containers, containers_exited, volumes, volumes_dangling, networks, networks_dangling;
-
   // Load containers :
   $.ajax({
     url: "http://"+window.location.hostname+":5000/containers",
     success: function(data) {
       containers = data.result;
       for(container in containers) {
-        $('#containers-active').append('<div class="container active" id="'+containers[container]["Id"]+'" style="background-color:'+hashStringToColor(containers[container]["Id"])+';"><b>' + containers[container]["Id"].substring(0,12) + '</b><br/>' + container + '</div>');
+        $('#containers-active').append('<div class="container active" id="'+container+'" style="background-color:'+ hashStringToColor(container)+ ';"><b>'+ container.substring(0,12) +'</b><br/>'+ containers[container]["Name"].replace('/','') +'</div>');
       }
+    }
+  });
+  // Load images :
+  $.ajax({
+    url: "http://"+window.location.hostname+":5000/images"
+  }).then(function(data) {
+    images = data.result;
+    for(image in images) {
+      $('#images-active').append('<div class="image active" id="'+ image.substring(7,72) +'" style="background-color:'+ hashStringToColor(image) +';"><b>' + image.substring(7,19) + '</b><br/>' + images[image]["RepoTags"][0] +'</div>');
+    }
+  });
+  // Load volumes :
+  $.ajax({
+    url: "http://"+window.location.hostname+":5000/volumes"
+  }).then(function(data) {
+    volumes = data.result;
+    for(volume in volumes) {
+      $('#volumes-active').append('<div class="volume active" id="'+ volume +'" style="background-color:'+hashStringToColor(volume)+';"><b>'+ volume.substring(0,12) +'</b><br/>'+ volumes[volume]["Driver"] +'</div>');
+    }
+  });
+  // Load networks :
+  $.ajax({
+    url: "http://"+window.location.hostname+":5000/networks"
+  }).then(function(data) {
+    networks = data.result;
+    for(network in networks) {
+      $('#networks-active').append('<div class="network active" id="'+ network +'" style="background-color:'+ hashStringToColor(network) +';"><b>' + network.substring(0,12) + '</b><br/>' + networks[network]["Name"] +'</div>');
     }
   });
 
@@ -20,67 +44,34 @@ $(document).ready(function() {
   }).then(function(data) {
     containers_exited = data.result;
     for(container in containers_exited) {
-      $('#containers-exited').append('<div class="container exited">' + containers_exited[container]["Id"].substring(0,12) + '<br/>' + container + '</div>');
+      $('#containers-exited').append('<div class="container exited">'+ container.substring(0,12) +'<br/>'+ containers_exited[container]["Name"].replace('/','') +'</div>');
     }
   });
-
-  // Load images :
-  $.ajax({
-    url: "http://"+window.location.hostname+":5000/images"
-  }).then(function(data) {
-    images = data.result;
-    for(image in images) {
-      $('#images-active').append('<div class="image active" id="'+images[image]["Id"].substring(7,72)+'" style="background-color:'+hashStringToColor(images[image]["Id"])+';"><b>' + images[image]["Id"].substring(7,19) + '</b><br/>' + image +'</div>');
-    }
-  });
-
   // Load dangling images :
   $.ajax({
     url: "http://"+window.location.hostname+":5000/images/dangling"
   }).then(function(data) {
     images_dangling = data.result;
     for(image in images_dangling) {
-      $('#images-dangling').append('<div class="image dangling">' + images_dangling[image]["Id"].substring(7,19) + '<br/>&ltnone&gt:&ltnone&gt</div>');
+      $('#images-dangling').append('<div class="image dangling">'+ image.substring(7,19) +'<br/>&ltnone&gt:&ltnone&gt</div>');
     }
   });
-
-  // Load volumes :
-  $.ajax({
-    url: "http://"+window.location.hostname+":5000/volumes"
-  }).then(function(data) {
-    volumes = data.result;
-    for(volume in volumes) {
-      $('#volumes-active').append('<div class="volume active" id="'+volume+'" style="background-color:'+hashStringToColor(volume)+';"><b>' + volume.substring(0,12) + '</b><br/>' + volumes[volume]["Driver"] +'</div>');
-    }
-  });
-
   // Load dangling volumes :
   $.ajax({
     url: "http://"+window.location.hostname+":5000/volumes/dangling"
   }).then(function(data) {
     volumes = data.result;
     for(volume in volumes) {
-      $('#volumes-dangling').append('<div class="volume dangling"><b>' + volume.substring(0,12) + '</b><br/>' + volumes[volume]["Driver"] +'</div>');
+      $('#volumes-dangling').append('<div class="volume dangling"><b>'+ volume.substring(0,12) +'</b><br/>'+ volumes[volume]["Driver"] +'</div>');
     }
   });
-
-  // Load networks :
-  $.ajax({
-    url: "http://"+window.location.hostname+":5000/networks"
-  }).then(function(data) {
-    networks = data.result;
-    for(network in networks) {
-      $('#networks-active').append('<div class="network active" id="'+networks[network]["Id"]+'" style="background-color:'+hashStringToColor(network)+';"><b>' + network + '</b><br/>' + networks[network]["Id"].substring(0,12) +'</div>');
-    }
-  });
-
   // Load dangling networks :
   $.ajax({
     url: "http://"+window.location.hostname+":5000/networks/dangling"
   }).then(function(data) {
     networks = data.result;
     for(network in networks) {
-      $('#networks-dangling').append('<div class="network dangling"><b>' + network + '</b><br/>' + networks[network]["Id"].substring(0,12) +'</div>');
+      $('#networks-dangling').append('<div class="network dangling"><b>' + network.substring(0,12) + '</b><br/>' + networks[network]["Name"] +'</div>');
     }
   });
 
@@ -124,6 +115,8 @@ $(document).ready(function() {
       }
     });
   });
+
+  $(".se-pre-con").fadeOut("slow");
 
   $('#refresh').click(function() {
     location.reload();

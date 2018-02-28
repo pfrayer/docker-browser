@@ -33,8 +33,7 @@ def dangling_images():
 @app.route("/images/used_by/<container_id>")
 def image_used_by(container_id):
     container = client.containers.get(container_id)
-    if container.attrs["Image"]:
-        return jsonify(result=container.attrs["Image"])
+    return jsonify( result=container.attrs["Image"] )
 
 
 @app.route("/volumes")
@@ -53,7 +52,7 @@ def volumes_used_by(container_id):
         for mount in container.attrs["Mounts"]:
             if mount["Type"] == "volume":
                 volumes[mount["Name"]] = mount
-    return jsonify(result=volumes)
+    return jsonify( result=volumes )
 
 
 @app.route("/networks")
@@ -62,8 +61,7 @@ def networks():
     for network in client.networks.list(greedy=True):
         if network.attrs["Containers"]:
             networks.append(network)
-    pretty_networks=named_networks(networks)
-    return jsonify(result=pretty_networks)
+    return jsonify( result=named_networks(networks) )
 
 @app.route("/networks/dangling")
 def dangling_networks():
@@ -71,42 +69,39 @@ def dangling_networks():
     for network in client.networks.list(greedy=True):
         if not network.attrs["Containers"]:
             networks.append(network)
-    pretty_volumes=named_volumes(networks)
-    return jsonify(result=pretty_volumes)
+    return jsonify( result=named_volumes(networks) )
 
 @app.route("/networks/used_by/<container_id>")
 def networks_used_by(container_id):
     container = client.containers.get(container_id)
     if container.attrs["NetworkSettings"]["Networks"]:
-        return jsonify(result=container.attrs["NetworkSettings"]["Networks"])
+        return jsonify( result=container.attrs["NetworkSettings"]["Networks"] )
+    else:
+        return jsonify( result={} )
 
 # Make pretty maps from Docker API:
 def named_containers(api_containers):
     containers = {}
     for container in api_containers:
-        if container.attrs["Name"]:
-            containers[container.attrs["Name"].strip('/')] = container.attrs
+        containers[container.id] = container.attrs
     return containers
 
 def named_images(api_images):
     images = {}
     for image in api_images:
-        if image.attrs["RepoTags"]:
-            images[image.attrs["RepoTags"][0]] = image.attrs
+        images[image.id] = image.attrs
     return images
 
 def named_volumes(api_volumes):
     volumes = {}
     for volume in api_volumes:
-        if volume.attrs["Name"]:
-            volumes[volume.attrs["Name"]] = volume.attrs
+        volumes[volume.id] = volume.attrs
     return volumes
 
 def named_networks(api_networks):
     networks = {}
     for network in api_networks:
-        if network.attrs["Name"]:
-            networks[network.attrs["Name"]] = network.attrs
+        networks[network.id] = network.attrs
     return networks
 
 # Main
