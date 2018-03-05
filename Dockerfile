@@ -1,5 +1,6 @@
 FROM python:3-alpine
-MAINTAINER Pierre FRAYER "pfrayer@gmail.com"
+LABEL MAINTAINER "Pierre FRAYER" 
+LABEL MAINTAINER_EMAIL "pfrayer@gmail.com"
 
 COPY app/ /app
 WORKDIR /app
