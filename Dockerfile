@@ -1,5 +1,5 @@
 FROM python:3-alpine
-LABEL MAINTAINER "Pierre FRAYER" 
+LABEL MAINTAINER "Pierre FRAYER"
 LABEL MAINTAINER_EMAIL "pfrayer@gmail.com"
 
 COPY app/ /app
