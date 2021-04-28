@@ -2,7 +2,7 @@ $(document).ready(function() {
 
   // Load containers :
   $.ajax({
-    url: "http://"+window.location.hostname+":5000/containers",
+    url: "http://"+window.location.hostname+":"+window.location.port+"/containers",
     success: function(data) {
       containers = data.result;
       for(container in containers) {
@@ -12,7 +12,7 @@ $(document).ready(function() {
   });
   // Load images :
   $.ajax({
-    url: "http://"+window.location.hostname+":5000/images"
+    url: "http://"+window.location.hostname+":"+window.location.port+"/images"
   }).then(function(data) {
     images = data.result;
     for(image in images) {
@@ -21,7 +21,7 @@ $(document).ready(function() {
   });
   // Load volumes :
   $.ajax({
-    url: "http://"+window.location.hostname+":5000/volumes"
+    url: "http://"+window.location.hostname+":"+window.location.port+"/volumes"
   }).then(function(data) {
     volumes = data.result;
     for(volume in volumes) {
@@ -30,7 +30,7 @@ $(document).ready(function() {
   });
   // Load networks :
   $.ajax({
-    url: "http://"+window.location.hostname+":5000/networks"
+    url: "http://"+window.location.hostname+":"+window.location.port+"/networks"
   }).then(function(data) {
     networks = data.result;
     for(network in networks) {
@@ -40,7 +40,7 @@ $(document).ready(function() {
 
   // Load exited containers:
   $.ajax({
-    url: "http://"+window.location.hostname+":5000/containers/exited"
+    url: "http://"+window.location.hostname+":"+window.location.port+"/containers/exited"
   }).then(function(data) {
     containers_exited = data.result;
     for(container in containers_exited) {
@@ -49,7 +49,7 @@ $(document).ready(function() {
   });
   // Load dangling images :
   $.ajax({
-    url: "http://"+window.location.hostname+":5000/images/dangling"
+    url: "http://"+window.location.hostname+":"+window.location.port+"/images/dangling"
   }).then(function(data) {
     images_dangling = data.result;
     for(image in images_dangling) {
@@ -58,7 +58,7 @@ $(document).ready(function() {
   });
   // Load dangling volumes :
   $.ajax({
-    url: "http://"+window.location.hostname+":5000/volumes/dangling"
+    url: "http://"+window.location.hostname+":"+window.location.port+"/volumes/dangling"
   }).then(function(data) {
     volumes = data.result;
     for(volume in volumes) {
@@ -67,7 +67,7 @@ $(document).ready(function() {
   });
   // Load dangling networks :
   $.ajax({
-    url: "http://"+window.location.hostname+":5000/networks/dangling"
+    url: "http://"+window.location.hostname+":"+window.location.port+"/networks/dangling"
   }).then(function(data) {
     networks = data.result;
     for(network in networks) {
@@ -85,7 +85,7 @@ $(document).ready(function() {
     $(this).css({'box-shadow' : '0px 0px 15px '+$(this).css('background-color')})
     container = $(this).attr("id");
     $.ajax({
-      url: "http://"+window.location.hostname+":5000/images/used_by/"+container
+      url: "http://"+window.location.hostname+":"+window.location.port+"/images/used_by/"+container
     }).then(function(data) {
       image = data.result;
       $("#"+image.substring(7,72)).addClass("selected");
@@ -94,7 +94,7 @@ $(document).ready(function() {
     });
 
     $.ajax({
-      url: "http://"+window.location.hostname+":5000/volumes/used_by/"+container
+      url: "http://"+window.location.hostname+":"+window.location.port+"/volumes/used_by/"+container
     }).then(function(data) {
       volumes = data.result;
       for(volume in volumes) {
@@ -105,7 +105,7 @@ $(document).ready(function() {
     });
 
     $.ajax({
-      url: "http://"+window.location.hostname+":5000/networks/used_by/"+container
+      url: "http://"+window.location.hostname+":"+window.location.port+"/networks/used_by/"+container
     }).then(function(data) {
       networks = data.result;
       for(network in networks) {
