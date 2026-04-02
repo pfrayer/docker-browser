@@ -1,141 +1,157 @@
-$(document).ready(function() {
+import { createApp, ref, reactive, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
 
-  // Load containers :
-  $.ajax({
-    url: "http://"+window.location.hostname+":"+window.location.port+"/containers",
-    success: function(data) {
-      containers = data.result;
-      for(container in containers) {
-        $('#containers-active').append('<div class="container active" id="'+container+'" style="background-color:'+ hashStringToColor(container)+ ';"><b>'+ container.substring(0,12) +'</b><br/>'+ containers[container]["Name"].replace('/','') +'</div>');
-      }
-    }
-  });
-  // Load images :
-  $.ajax({
-    url: "http://"+window.location.hostname+":"+window.location.port+"/images"
-  }).then(function(data) {
-    images = data.result;
-    for(image in images) {
-      $('#images-active').append('<div class="image active" id="'+ image.substring(7,72) +'" style="background-color:'+ hashStringToColor(image) +';"><b>' + image.substring(7,19) + '</b><br/>' + images[image]["RepoTags"][0] +'</div>');
-    }
-  });
-  // Load volumes :
-  $.ajax({
-    url: "http://"+window.location.hostname+":"+window.location.port+"/volumes"
-  }).then(function(data) {
-    volumes = data.result;
-    for(volume in volumes) {
-      $('#volumes-active').append('<div class="volume active" id="'+ volume +'" style="background-color:'+hashStringToColor(volume)+';"><b>'+ volume.substring(0,12) +'</b><br/>'+ volumes[volume]["Driver"] +'</div>');
-    }
-  });
-  // Load networks :
-  $.ajax({
-    url: "http://"+window.location.hostname+":"+window.location.port+"/networks"
-  }).then(function(data) {
-    networks = data.result;
-    for(network in networks) {
-      $('#networks-active').append('<div class="network active" id="'+ network +'" style="background-color:'+ hashStringToColor(network) +';"><b>' + network.substring(0,12) + '</b><br/>' + networks[network]["Name"] +'</div>');
-    }
-  });
-
-  // Load exited containers:
-  $.ajax({
-    url: "http://"+window.location.hostname+":"+window.location.port+"/containers/exited"
-  }).then(function(data) {
-    containers_exited = data.result;
-    for(container in containers_exited) {
-      $('#containers-exited').append('<div class="container exited">'+ container.substring(0,12) +'<br/>'+ containers_exited[container]["Name"].replace('/','') +'</div>');
-    }
-  });
-  // Load dangling images :
-  $.ajax({
-    url: "http://"+window.location.hostname+":"+window.location.port+"/images/dangling"
-  }).then(function(data) {
-    images_dangling = data.result;
-    for(image in images_dangling) {
-      $('#images-dangling').append('<div class="image dangling">'+ image.substring(7,19) +'<br/>&ltnone&gt:&ltnone&gt</div>');
-    }
-  });
-  // Load dangling volumes :
-  $.ajax({
-    url: "http://"+window.location.hostname+":"+window.location.port+"/volumes/dangling"
-  }).then(function(data) {
-    volumes = data.result;
-    for(volume in volumes) {
-      $('#volumes-dangling').append('<div class="volume dangling"><b>'+ volume.substring(0,12) +'</b><br/>'+ volumes[volume]["Driver"] +'</div>');
-    }
-  });
-  // Load dangling networks :
-  $.ajax({
-    url: "http://"+window.location.hostname+":"+window.location.port+"/networks/dangling"
-  }).then(function(data) {
-    networks = data.result;
-    for(network in networks) {
-      $('#networks-dangling').append('<div class="network dangling"><b>' + network.substring(0,12) + '</b><br/>' + networks[network]["Name"] +'</div>');
-    }
-  });
-
-
-
-  $(document).on("click", ".container", function() {
-    $(".selected").removeClass("selected");
-    $(".active").removeClass("active");
-    $(this).addClass("selected");
-    $(this).addClass("active");
-    $(this).css({'box-shadow' : '0px 0px 15px '+$(this).css('background-color')})
-    container = $(this).attr("id");
-    $.ajax({
-      url: "http://"+window.location.hostname+":"+window.location.port+"/images/used_by/"+container
-    }).then(function(data) {
-      image = data.result;
-      $("#"+image.substring(7,72)).addClass("selected");
-      $("#"+image.substring(7,72)).addClass("active");
-      $("#"+image.substring(7,72)).css({'box-shadow' : '0px 0px 15px '+ $("#"+image.substring(7,72)).css('background-color') })
-    });
-
-    $.ajax({
-      url: "http://"+window.location.hostname+":"+window.location.port+"/volumes/used_by/"+container
-    }).then(function(data) {
-      volumes = data.result;
-      for(volume in volumes) {
-        $("#"+volumes[volume]["Name"]).addClass("selected");
-        $("#"+volumes[volume]["Name"]).addClass("active");
-        $("#"+volumes[volume]["Name"]).css({'box-shadow' : '0px 0px 15px '+ $("#"+volume).css('background-color') })
-      }
-    });
-
-    $.ajax({
-      url: "http://"+window.location.hostname+":"+window.location.port+"/networks/used_by/"+container
-    }).then(function(data) {
-      networks = data.result;
-      for(network in networks) {
-        $("#"+networks[network]["NetworkID"]).addClass("selected");
-        $("#"+networks[network]["NetworkID"]).addClass("active");
-        $("#"+networks[network]["NetworkID"]).css({'box-shadow' : '0px 0px 15px '+ $("#"+networks[network]["NetworkID"]).css('background-color') })
-      }
-    });
-  });
-
-  $(".se-pre-con").fadeOut("slow");
-
-  $('#refresh').click(function() {
-    location.reload();
-  });
-});
-
-
-function djb2(str){
-  var hash = 7536;
-  for (var i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) + str.charCodeAt(i); /* hash * 33 + c */
+function djb2(str) {
+  let hash = 7536;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
   }
   return hash;
 }
 
 function hashStringToColor(str) {
-  var hash = djb2(str);
-  var r = (hash & 0xFF0000) >> 16;
-  var g = (hash & 0x00FF00) >> 8;
-  var b = hash & 0x0000FF;
+  const hash = djb2(str);
+  const r = (hash & 0xFF0000) >> 16;
+  const g = (hash & 0x00FF00) >> 8;
+  const b = hash & 0x0000FF;
   return "#" + ("0" + r.toString(16)).substr(-2) + ("0" + g.toString(16)).substr(-2) + ("0" + b.toString(16)).substr(-2);
 }
+
+function shortId(id) {
+  return id ? id.substring(0, 12) : '';
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.result || {};
+}
+
+const app = createApp({
+  setup() {
+    const containers = ref({});
+    const exitedContainers = ref({});
+    const images = ref({});
+    const danglingImages = ref({});
+    const volumes = ref({});
+    const danglingVolumes = ref({});
+    const networks = ref({});
+    const danglingNetworks = ref({});
+    const selectedContainer = ref(null);
+    const relatedImage = ref(null);
+    const relatedVolumes = ref(new Set());
+    const relatedNetworks = ref(new Set());
+    const loading = ref(false);
+
+    async function fetchAll() {
+      loading.value = true;
+      selectedContainer.value = null;
+      relatedImage.value = null;
+      relatedVolumes.value = new Set();
+      relatedNetworks.value = new Set();
+
+      try {
+        const [c, ce, img, imgD, vol, volD, net, netD] = await Promise.all([
+          fetchJson('/containers'),
+          fetchJson('/containers/exited'),
+          fetchJson('/images'),
+          fetchJson('/images/dangling'),
+          fetchJson('/volumes'),
+          fetchJson('/volumes/dangling'),
+          fetchJson('/networks'),
+          fetchJson('/networks/dangling'),
+        ]);
+        containers.value = c;
+        exitedContainers.value = ce;
+        images.value = img;
+        danglingImages.value = imgD;
+        volumes.value = vol;
+        danglingVolumes.value = volD;
+        networks.value = net;
+        danglingNetworks.value = netD;
+      } catch (e) {
+        console.error('Failed to fetch Docker data:', e);
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    async function selectContainer(containerId) {
+      selectedContainer.value = containerId;
+      relatedImage.value = null;
+      relatedVolumes.value = new Set();
+      relatedNetworks.value = new Set();
+
+      try {
+        const [imgRes, volRes, netRes] = await Promise.all([
+          fetchJson(`/images/used_by/${containerId}`),
+          fetchJson(`/volumes/used_by/${containerId}`),
+          fetchJson(`/networks/used_by/${containerId}`),
+        ]);
+
+        // Image result is a plain string
+        if (typeof imgRes === 'string') {
+          relatedImage.value = imgRes;
+        }
+
+        // Volumes result is a map; collect volume names
+        const volNames = new Set();
+        if (typeof volRes === 'object') {
+          for (const key in volRes) {
+            const v = volRes[key];
+            if (v && v.Name) volNames.add(v.Name);
+          }
+        }
+        relatedVolumes.value = volNames;
+
+        // Networks result is a map; collect network IDs
+        const netIds = new Set();
+        if (typeof netRes === 'object') {
+          for (const key in netRes) {
+            const n = netRes[key];
+            if (n && n.NetworkID) netIds.add(n.NetworkID);
+          }
+        }
+        relatedNetworks.value = netIds;
+      } catch (e) {
+        console.error('Failed to fetch related objects:', e);
+      }
+    }
+
+    function isHighlighted(type, id) {
+      if (!selectedContainer.value) return false;
+      if (type === 'container') return id === selectedContainer.value;
+      if (type === 'image') return id === relatedImage.value;
+      if (type === 'volume') return relatedVolumes.value.has(id);
+      if (type === 'network') return relatedNetworks.value.has(id);
+      return false;
+    }
+
+    function refresh() {
+      fetchAll();
+    }
+
+    onMounted(() => {
+      fetchAll();
+    });
+
+    return {
+      containers,
+      exitedContainers,
+      images,
+      danglingImages,
+      volumes,
+      danglingVolumes,
+      networks,
+      danglingNetworks,
+      selectedContainer,
+      loading,
+      selectContainer,
+      isHighlighted,
+      hashStringToColor,
+      shortId,
+      refresh,
+    };
+  },
+});
+
+app.mount('#app');
