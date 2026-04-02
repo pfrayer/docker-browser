@@ -1,4 +1,4 @@
-import { createApp, ref, reactive, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
+import { createApp, ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
 
 function djb2(str) {
   let hash = 7536;
@@ -10,10 +10,10 @@ function djb2(str) {
 
 function hashStringToColor(str) {
   const hash = djb2(str);
-  const r = (hash & 0xFF0000) >> 16;
-  const g = (hash & 0x00FF00) >> 8;
-  const b = hash & 0x0000FF;
-  return "#" + ("0" + r.toString(16)).substr(-2) + ("0" + g.toString(16)).substr(-2) + ("0" + b.toString(16)).substr(-2);
+  const h = Math.abs(hash) % 360;
+  const s = 55 + (Math.abs(hash >> 8) % 20);
+  const l = 55 + (Math.abs(hash >> 16) % 15);
+  return `hsl(${h}, ${s}%, ${l}%)`;
 }
 
 function shortId(id) {
@@ -41,6 +41,14 @@ const app = createApp({
     const relatedVolumes = ref(new Set());
     const relatedNetworks = ref(new Set());
     const loading = ref(false);
+
+    const objectCount = computed(() =>
+      Object.keys(containers.value).length +
+      Object.keys(exitedContainers.value).length +
+      Object.keys(images.value).length +
+      Object.keys(volumes.value).length +
+      Object.keys(networks.value).length
+    );
 
     async function fetchAll() {
       loading.value = true;
@@ -76,6 +84,14 @@ const app = createApp({
     }
 
     async function selectContainer(containerId) {
+      if (selectedContainer.value === containerId) {
+        selectedContainer.value = null;
+        relatedImage.value = null;
+        relatedVolumes.value = new Set();
+        relatedNetworks.value = new Set();
+        return;
+      }
+
       selectedContainer.value = containerId;
       relatedImage.value = null;
       relatedVolumes.value = new Set();
@@ -88,12 +104,10 @@ const app = createApp({
           fetchJson(`/networks/used_by/${containerId}`),
         ]);
 
-        // Image result is a plain string
         if (typeof imgRes === 'string') {
           relatedImage.value = imgRes;
         }
 
-        // Volumes result is a map; collect volume names
         const volNames = new Set();
         if (typeof volRes === 'object') {
           for (const key in volRes) {
@@ -103,7 +117,6 @@ const app = createApp({
         }
         relatedVolumes.value = volNames;
 
-        // Networks result is a map; collect network IDs
         const netIds = new Set();
         if (typeof netRes === 'object') {
           for (const key in netRes) {
@@ -145,6 +158,7 @@ const app = createApp({
       danglingNetworks,
       selectedContainer,
       loading,
+      objectCount,
       selectContainer,
       isHighlighted,
       hashStringToColor,
