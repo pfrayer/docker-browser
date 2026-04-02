@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/97_Docker_logo_logos-512.png">
     <link href="/static/css/style.css" rel="stylesheet">
   </head>
   <body>
@@ -24,9 +25,7 @@
       <!-- Header -->
       <header class="app-header">
         <div class="brand">
-          <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M13 4H11V6H13V4ZM7 4H5V6H7V4ZM10 4H8V6H10V4ZM16 4H14V6H16V4ZM13 7H11V9H13V7ZM7 7H5V9H7V7ZM10 7H8V9H10V7ZM22 9.5C21.21 8.4 19.76 8.04 18.5 8.5C18.27 7.08 17.5 5.82 16.35 5L15.5 5.86C16.72 6.67 17.44 8.04 17.47 9.5H2C2.04 12.32 3.5 14.93 5.93 16.38C4.71 17.87 4.03 19.72 4 21.63H5.5C5.53 20.04 6.1 18.5 7.13 17.27C8.32 17.7 9.58 17.93 10.85 17.95H11C13.76 17.95 16.39 16.82 18.26 14.82C19.79 13.93 20.86 12.38 21.15 10.61L22 9.5Z" fill="currentColor"/>
-          </svg>
+          <img class="logo" src="https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/97_Docker_logo_logos-512.png" alt="Docker logo">
           <h1>Docker Browser</h1>
         </div>
         <div class="header-actions">
@@ -51,6 +50,19 @@
         </div>
       </transition>
 
+      <!-- Search bar -->
+      <div class="search-bar" v-if="objectCount > 0">
+        <svg class="search-icon" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm-.82 4.74a6 6 0 1 1 1.06-1.06l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04Z"/>
+        </svg>
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Filter objects by name or ID…"
+          class="search-input"
+        />
+      </div>
+
       <!-- Main grid -->
       <div class="grid">
 
@@ -66,7 +78,7 @@
           <div class="card-list">
             <transition-group name="card">
               <div
-                v-for="(info, id) in containers" :key="id"
+                v-for="(info, id) in filteredContainers" :key="id"
                 class="card card--container"
                 :class="{ 'card--selected': selectedType === 'container' && selectedId === id, 'card--highlighted': isHighlighted('container', id), 'card--dimmed': hasSelection && !isHighlighted('container', id) }"
                 @click="selectContainer(id)"
@@ -80,7 +92,7 @@
               </div>
             </transition-group>
             <div
-              v-for="(info, id) in exitedContainers" :key="'e-'+id"
+              v-for="(info, id) in filteredExitedContainers" :key="'e-'+id"
               class="card card--container card--exited"
             >
               <div class="card-accent card-accent--exited"></div>
@@ -107,7 +119,7 @@
           </div>
           <div class="card-list">
             <div
-              v-for="(info, id) in images" :key="id"
+              v-for="(info, id) in filteredImages" :key="id"
               class="card card--image"
               :class="{ 'card--selected': selectedType === 'image' && selectedId === id, 'card--highlighted': isHighlighted('image', id), 'card--dimmed': hasSelection && !isHighlighted('image', id) }"
               @click="selectImage(id)"
@@ -119,7 +131,7 @@
               </div>
             </div>
             <div
-              v-for="(info, id) in danglingImages" :key="'d-'+id"
+              v-for="(info, id) in filteredDanglingImages" :key="'d-'+id"
               class="card card--image card--dangling"
             >
               <div class="card-accent card-accent--dangling"></div>
@@ -145,7 +157,7 @@
           </div>
           <div class="card-list">
             <div
-              v-for="(info, name) in volumes" :key="name"
+              v-for="(info, name) in filteredVolumes" :key="name"
               class="card card--volume"
               :class="{ 'card--selected': selectedType === 'volume' && selectedId === name, 'card--highlighted': isHighlighted('volume', name), 'card--dimmed': hasSelection && !isHighlighted('volume', name) }"
               @click="selectVolume(name)"
@@ -157,7 +169,7 @@
               </div>
             </div>
             <div
-              v-for="(info, name) in danglingVolumes" :key="'dv-'+name"
+              v-for="(info, name) in filteredDanglingVolumes" :key="'dv-'+name"
               class="card card--volume card--dangling"
             >
               <div class="card-accent card-accent--dangling"></div>
@@ -183,7 +195,7 @@
           </div>
           <div class="card-list">
             <div
-              v-for="(info, id) in networks" :key="id"
+              v-for="(info, id) in filteredNetworks" :key="id"
               class="card card--network"
               :class="{ 'card--selected': selectedType === 'network' && selectedId === id, 'card--highlighted': isHighlighted('network', id), 'card--dimmed': hasSelection && !isHighlighted('network', id) }"
               @click="selectNetwork(id)"
@@ -195,7 +207,7 @@
               </div>
             </div>
             <div
-              v-for="(info, id) in danglingNetworks" :key="'dn-'+id"
+              v-for="(info, id) in filteredDanglingNetworks" :key="'dn-'+id"
               class="card card--network card--dangling"
             >
               <div class="card-accent card-accent--dangling"></div>
@@ -209,6 +221,36 @@
             No networks found
           </div>
         </section>
+
+        <!-- Build Cache -->
+        <section class="section section-half">
+          <div class="section-header">
+            <h2>
+              <span class="section-icon section-icon--buildcache">⚙</span>
+              Build Cache
+            </h2>
+            <span class="badge">{{ Object.keys(buildCache).length }}</span>
+          </div>
+          <div class="card-list">
+            <div
+              v-for="(info, id) in filteredBuildCache" :key="id"
+              class="card card--buildcache"
+              :class="{ 'card--dimmed': hasSelection }"
+            >
+              <div class="card-accent" :style="{ background: hashStringToColor(id) }"></div>
+              <div class="card-body">
+                <div class="card-name">{{ info.Description || info.Type || '‹unknown›' }}</div>
+                <code class="card-id">{{ shortId(id) }}</code>
+                <code class="card-id card-id--sub">{{ formatBytes(info.Size) }}{{ info.InUse ? ' · in use' : '' }}</code>
+              </div>
+            </div>
+          </div>
+          <div v-if="Object.keys(buildCache).length === 0" class="empty-state">
+            No build cache entries
+          </div>
+        </section>
+
+
       </div>
     </div>
 

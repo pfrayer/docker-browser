@@ -106,6 +106,13 @@ async def networks_used_by(container_id: str) -> dict[str, Any]:
     return {"result": container.attrs["NetworkSettings"]["Networks"] or {}}
 
 
+@app.get("/buildcache")
+async def buildcache() -> dict[str, Any]:
+    df = await asyncio.to_thread(client.df)
+    entries = df.get("BuildCache") or []
+    return {"result": {entry["ID"]: entry for entry in entries}}
+
+
 # --- Helpers ---
 
 

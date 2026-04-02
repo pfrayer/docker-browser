@@ -20,6 +20,13 @@ function shortId(id) {
   return id ? id.substring(0, 12) : '';
 }
 
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / Math.pow(1024, i)).toFixed(i ? 1 : 0)} ${units[i]}`;
+}
+
 async function fetchJson(url) {
   const res = await fetch(url);
   const data = await res.json();
@@ -36,8 +43,10 @@ const app = createApp({
     const danglingVolumes = ref({});
     const networks = ref({});
     const danglingNetworks = ref({});
+    const buildCache = ref({});
     const selectedType = ref(null);
     const selectedId = ref(null);
+    const searchQuery = ref('');
     const relatedImage = ref(null);
     const relatedVolumes = ref(new Set());
     const relatedNetworks = ref(new Set());
@@ -45,6 +54,82 @@ const app = createApp({
     const loading = ref(false);
 
     const hasSelection = computed(() => selectedType.value !== null);
+
+    function matchesSearch(text) {
+      if (!searchQuery.value) return true;
+      return text.toLowerCase().includes(searchQuery.value.toLowerCase());
+    }
+
+    function containerLabel(info) {
+      return info.Name ? info.Name.replace('/', '') : '';
+    }
+
+    function imageLabel(info) {
+      return info.RepoTags && info.RepoTags[0] ? info.RepoTags[0] : '';
+    }
+
+    const filteredContainers = computed(() => {
+      if (!searchQuery.value) return containers.value;
+      return Object.fromEntries(Object.entries(containers.value).filter(([id, info]) =>
+        matchesSearch(containerLabel(info)) || matchesSearch(id)
+      ));
+    });
+
+    const filteredExitedContainers = computed(() => {
+      if (!searchQuery.value) return exitedContainers.value;
+      return Object.fromEntries(Object.entries(exitedContainers.value).filter(([id, info]) =>
+        matchesSearch(containerLabel(info)) || matchesSearch(id)
+      ));
+    });
+
+    const filteredImages = computed(() => {
+      if (!searchQuery.value) return images.value;
+      return Object.fromEntries(Object.entries(images.value).filter(([id, info]) =>
+        matchesSearch(imageLabel(info)) || matchesSearch(id)
+      ));
+    });
+
+    const filteredDanglingImages = computed(() => {
+      if (!searchQuery.value) return danglingImages.value;
+      return Object.fromEntries(Object.entries(danglingImages.value).filter(([id]) =>
+        matchesSearch(id)
+      ));
+    });
+
+    const filteredVolumes = computed(() => {
+      if (!searchQuery.value) return volumes.value;
+      return Object.fromEntries(Object.entries(volumes.value).filter(([name]) =>
+        matchesSearch(name)
+      ));
+    });
+
+    const filteredDanglingVolumes = computed(() => {
+      if (!searchQuery.value) return danglingVolumes.value;
+      return Object.fromEntries(Object.entries(danglingVolumes.value).filter(([name]) =>
+        matchesSearch(name)
+      ));
+    });
+
+    const filteredNetworks = computed(() => {
+      if (!searchQuery.value) return networks.value;
+      return Object.fromEntries(Object.entries(networks.value).filter(([id, info]) =>
+        matchesSearch(info.Name || '') || matchesSearch(id)
+      ));
+    });
+
+    const filteredDanglingNetworks = computed(() => {
+      if (!searchQuery.value) return danglingNetworks.value;
+      return Object.fromEntries(Object.entries(danglingNetworks.value).filter(([id, info]) =>
+        matchesSearch(info.Name || '') || matchesSearch(id)
+      ));
+    });
+
+    const filteredBuildCache = computed(() => {
+      if (!searchQuery.value) return buildCache.value;
+      return Object.fromEntries(Object.entries(buildCache.value).filter(([id, info]) =>
+        matchesSearch(info.Description || '') || matchesSearch(info.Type || '') || matchesSearch(id)
+      ));
+    });
 
     const objectCount = computed(() =>
       Object.keys(containers.value).length +
@@ -59,7 +144,7 @@ const app = createApp({
       clearSelection();
 
       try {
-        const [c, ce, img, imgD, vol, volD, net, netD] = await Promise.all([
+        const [c, ce, img, imgD, vol, volD, net, netD, bc] = await Promise.all([
           fetchJson('/containers'),
           fetchJson('/containers/exited'),
           fetchJson('/images'),
@@ -68,6 +153,7 @@ const app = createApp({
           fetchJson('/volumes/dangling'),
           fetchJson('/networks'),
           fetchJson('/networks/dangling'),
+          fetchJson('/buildcache'),
         ]);
         containers.value = c;
         exitedContainers.value = ce;
@@ -77,6 +163,7 @@ const app = createApp({
         danglingVolumes.value = volD;
         networks.value = net;
         danglingNetworks.value = netD;
+        buildCache.value = bc;
       } catch (e) {
         console.error('Failed to fetch Docker data:', e);
       } finally {
@@ -105,39 +192,47 @@ const app = createApp({
     }
 
     async function selectContainer(containerId) {
-      toggleSelection('container', containerId, async () => {
-        try {
-          const [imgRes, volRes, netRes] = await Promise.all([
-            fetchJson(`/images/used_by/${containerId}`),
-            fetchJson(`/volumes/used_by/${containerId}`),
-            fetchJson(`/networks/used_by/${containerId}`),
-          ]);
+      if (selectedType.value === 'container' && selectedId.value === containerId) {
+        clearSelection();
+        return;
+      }
+      clearSelection();
+      selectedType.value = 'container';
+      selectedId.value = containerId;
 
-          if (typeof imgRes === 'string') {
-            relatedImage.value = imgRes;
-          }
+      try {
+        const [imgRes, volRes, netRes] = await Promise.all([
+          fetchJson(`/images/used_by/${containerId}`),
+          fetchJson(`/volumes/used_by/${containerId}`),
+          fetchJson(`/networks/used_by/${containerId}`),
+        ]);
 
-          const volNames = new Set();
-          if (typeof volRes === 'object') {
-            for (const key in volRes) {
-              const v = volRes[key];
-              if (v && v.Name) volNames.add(v.Name);
-            }
-          }
-          relatedVolumes.value = volNames;
+        if (selectedType.value !== 'container' || selectedId.value !== containerId) return;
 
-          const netIds = new Set();
-          if (typeof netRes === 'object') {
-            for (const key in netRes) {
-              const n = netRes[key];
-              if (n && n.NetworkID) netIds.add(n.NetworkID);
-            }
-          }
-          relatedNetworks.value = netIds;
-        } catch (e) {
-          console.error('Failed to fetch related objects:', e);
+        if (typeof imgRes === 'string') {
+          relatedImage.value = imgRes;
         }
-      });
+
+        const volNames = new Set();
+        if (typeof volRes === 'object') {
+          for (const key in volRes) {
+            const v = volRes[key];
+            if (v && v.Name) volNames.add(v.Name);
+          }
+        }
+        relatedVolumes.value = volNames;
+
+        const netIds = new Set();
+        if (typeof netRes === 'object') {
+          for (const key in netRes) {
+            const n = netRes[key];
+            if (n && n.NetworkID) netIds.add(n.NetworkID);
+          }
+        }
+        relatedNetworks.value = netIds;
+      } catch (e) {
+        console.error('Failed to fetch related objects:', e);
+      }
     }
 
     function selectNetwork(networkId) {
@@ -208,6 +303,17 @@ const app = createApp({
       danglingVolumes,
       networks,
       danglingNetworks,
+      buildCache,
+      searchQuery,
+      filteredContainers,
+      filteredExitedContainers,
+      filteredImages,
+      filteredDanglingImages,
+      filteredVolumes,
+      filteredDanglingVolumes,
+      filteredNetworks,
+      filteredDanglingNetworks,
+      filteredBuildCache,
       selectedType,
       selectedId,
       hasSelection,
@@ -220,6 +326,7 @@ const app = createApp({
       isHighlighted,
       hashStringToColor,
       shortId,
+      formatBytes,
       refresh,
     };
   },

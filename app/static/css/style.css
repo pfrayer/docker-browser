@@ -63,7 +63,7 @@ body {
 .logo {
   width: 28px;
   height: 28px;
-  color: var(--accent-blue);
+  object-fit: contain;
 }
 
 .app-header h1 {
@@ -141,13 +141,52 @@ body {
 
 /* === Hint Banner === */
 .hint-banner {
-  background: linear-gradient(135deg, rgba(88, 166, 255, 0.08), rgba(188, 140, 255, 0.06));
-  border: 1px solid rgba(88, 166, 255, 0.15);
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  border-left: 3px solid var(--accent-blue);
   border-radius: var(--radius-sm);
   padding: 10px 16px;
   margin-bottom: 16px;
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text);
+}
+
+/* === Search Bar === */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  transition: border-color var(--transition);
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent-blue);
+}
+
+.search-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-subtle);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.search-input::placeholder {
+  color: var(--text-subtle);
 }
 
 /* === Grid === */
@@ -204,6 +243,8 @@ body {
 .section-icon--image { background: rgba(188, 140, 255, 0.15); color: var(--accent-purple); }
 .section-icon--volume { background: rgba(210, 153, 34, 0.15); color: var(--accent-orange); }
 .section-icon--network { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
+.section-icon--buildcache { background: rgba(139, 148, 158, 0.15); color: var(--text-muted); }
+
 
 .badge {
   font-size: 11px;
