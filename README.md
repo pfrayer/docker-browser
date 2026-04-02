@@ -4,11 +4,6 @@ Visualize your Docker objects (containers, images, volumes, networks) and easily
 
 ![Docker browser](/doc/demo.gif?raw=true)
 
-## Stack
-
-- **Backend**: [FastAPI](https://fastapi.tiangolo.com/) + [docker-py](https://docker-py.readthedocs.io/) (async via `asyncio.to_thread`)
-- **Frontend**: [Vue.js 3](https://vuejs.org/) (CDN, no build step) + vanilla CSS
-
 ## Usage
 
 ### Docker
@@ -23,9 +18,8 @@ docker run -d \
 ### Local development
 
 ```sh
-cd app
-pip install -r requirements.txt
-python app.py
+poetry install
+poetry run python -m app.app
 ```
 
 Then open `http://localhost:5000` in your browser and click on a container to see its related objects highlighted.
@@ -35,6 +29,16 @@ Then open `http://localhost:5000` in your browser and click on a container to se
 FastAPI auto-generates interactive API docs at `/docs` (Swagger UI) and `/redoc`.
 
 See also the [API documentation](./doc/README.md).
+
+## Development
+
+```sh
+poetry install               # install all deps (including dev)
+poetry run pytest             # run tests
+poetry run ruff check .       # lint
+poetry run ruff format .      # format
+pre-commit install            # install git hooks
+```
 
 ## TODO
 

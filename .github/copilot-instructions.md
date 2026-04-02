@@ -15,15 +15,17 @@ All API endpoints return JSON wrapped in a `{"result": ...}` envelope. Unlike do
 
 Relationship endpoints follow the pattern `/resource/used_by/{container_id}` to find resources associated with a given container.
 
-## Running Locally
+## Build, Test, and Lint
 
 ```sh
-cd app
-pip install -r requirements.txt
-python app.py
+poetry install                    # install all deps (including dev)
+poetry run pytest                 # run all tests with coverage
+poetry run pytest tests/test_app.py::test_root_returns_html  # run a single test
+poetry run ruff check .           # lint
+poetry run ruff format .          # format
 ```
 
-Uvicorn starts on `0.0.0.0:5000` with reload enabled. A running Docker daemon is required.
+**Important**: After every code change, run `poetry run pytest` to verify tests pass and coverage stays at 100%. Do not present changes without confirming tests pass. The test suite enforces `--cov-fail-under=100`.
 
 ## Building the Docker Image
 
@@ -36,5 +38,5 @@ docker run -v /var/run/docker.sock:/var/run/docker.sock -p 5000:5000 docker-brow
 
 - Vue 3 via CDN (`unpkg.com/vue@3`), no npm or build step required
 - Object colors are deterministically generated from IDs using a DJB2 hash → hex color function
-- Clicking a container highlights its associated image, volumes, and networks via the `used_by` API endpoints
+- Clicking any Docker object highlights related objects (containers, images, volumes, networks)
 - CSS uses flexbox layout with transitions for highlight effects
