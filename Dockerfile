@@ -8,5 +8,5 @@ WORKDIR /app
 EXPOSE 5000
 
 RUN pip install -r /app/requirements.txt
-ENTRYPOINT ["python"]
-CMD ["app.py"]
+ENTRYPOINT ["uvicorn"]
+CMD ["app:app", "--host", "0.0.0.0", "--port", "5000"]
