@@ -295,12 +295,14 @@ body {
   font-size: 11px;
 }
 
-/* --- Container cards are clickable --- */
-.card--container {
+/* --- Container and network cards are clickable --- */
+.card--container,
+.card--network {
   cursor: pointer;
 }
 
-.card--container:hover {
+.card--container:hover,
+.card--network:hover {
   background: var(--bg-card-hover);
   border-color: rgba(88, 166, 255, 0.3);
   box-shadow: var(--shadow-hover);
