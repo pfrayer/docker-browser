@@ -1,109 +1,133 @@
-from flask import Flask
-from flask import jsonify
-from flask import render_template
+import asyncio
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any
+
 import docker
+import uvicorn
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
-client = docker.from_env()
-app = Flask(__name__)
-
-
-@app.route("/")
-def hello():
-    return render_template('index.html')
-
-
-@app.route("/containers")
-def containers():
-    return jsonify( result=named_containers(client.containers.list()) )
-
-@app.route("/containers/exited")
-def exited_containers():
-    return jsonify( result=named_containers(client.containers.list(filters={'status': 'exited'})) )
+BASE_DIR = Path(__file__).resolve().parent
+client: docker.DockerClient
 
 
-
-@app.route("/images")
-def images():
-    return jsonify( result=named_images(client.images.list()) )
-
-@app.route("/images/dangling")
-def dangling_images():
-    return jsonify( result=named_images(client.images.list(filters={'dangling': True})) )
-
-@app.route("/images/used_by/<container_id>")
-def image_used_by(container_id):
-    container = client.containers.get(container_id)
-    return jsonify( result=container.attrs["Image"] )
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global client
+    client = docker.from_env()
+    yield
+    client.close()
 
 
-@app.route("/volumes")
-def volumes():
-    return jsonify( result=named_volumes(client.volumes.list()) )
+app = FastAPI(lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
-@app.route("/volumes/dangling")
-def dangling_volumes():
-    return jsonify( result=named_volumes(client.volumes.list(filters={'dangling': True})) )
 
-@app.route("/volumes/used_by/<container_id>")
-def volumes_used_by(container_id):
-    volumes = {}
-    container = client.containers.get(container_id)
+# --- Routes ---
+
+
+@app.get("/")
+async def root() -> FileResponse:
+    return FileResponse(BASE_DIR / "templates" / "index.html")
+
+
+@app.get("/containers")
+async def containers() -> dict[str, Any]:
+    items = await asyncio.to_thread(client.containers.list)
+    return {"result": named_containers(items)}
+
+
+@app.get("/containers/exited")
+async def exited_containers() -> dict[str, Any]:
+    items = await asyncio.to_thread(client.containers.list, filters={"status": "exited"})
+    return {"result": named_containers(items)}
+
+
+@app.get("/images")
+async def images() -> dict[str, Any]:
+    items = await asyncio.to_thread(client.images.list)
+    return {"result": named_images(items)}
+
+
+@app.get("/images/dangling")
+async def dangling_images() -> dict[str, Any]:
+    items = await asyncio.to_thread(client.images.list, filters={"dangling": True})
+    return {"result": named_images(items)}
+
+
+@app.get("/images/used_by/{container_id}")
+async def image_used_by(container_id: str) -> dict[str, Any]:
+    container = await asyncio.to_thread(client.containers.get, container_id)
+    return {"result": container.attrs["Image"]}
+
+
+@app.get("/volumes")
+async def volumes() -> dict[str, Any]:
+    items = await asyncio.to_thread(client.volumes.list)
+    return {"result": named_volumes(items)}
+
+
+@app.get("/volumes/dangling")
+async def dangling_volumes() -> dict[str, Any]:
+    items = await asyncio.to_thread(client.volumes.list, filters={"dangling": True})
+    return {"result": named_volumes(items)}
+
+
+@app.get("/volumes/used_by/{container_id}")
+async def volumes_used_by(container_id: str) -> dict[str, Any]:
+    container = await asyncio.to_thread(client.containers.get, container_id)
+    result: dict[str, Any] = {}
     if container.attrs["Mounts"]:
         for mount in container.attrs["Mounts"]:
             if mount["Type"] == "volume":
-                volumes[mount["Name"]] = mount
-    return jsonify( result=volumes )
+                result[mount["Name"]] = mount
+    return {"result": result}
 
 
-@app.route("/networks")
-def networks():
-    networks = []
-    for network in client.networks.list(greedy=True):
-        if network.attrs["Containers"]:
-            networks.append(network)
-    return jsonify( result=named_networks(networks) )
+@app.get("/networks")
+async def networks() -> dict[str, Any]:
+    all_networks = await asyncio.to_thread(client.networks.list, greedy=True)
+    active = [n for n in all_networks if n.attrs["Containers"]]
+    return {"result": named_networks(active)}
 
-@app.route("/networks/dangling")
-def dangling_networks():
-    networks = []
-    for network in client.networks.list(greedy=True):
-        if not network.attrs["Containers"]:
-            networks.append(network)
-    return jsonify( result=named_volumes(networks) )
 
-@app.route("/networks/used_by/<container_id>")
-def networks_used_by(container_id):
-    container = client.containers.get(container_id)
-    if container.attrs["NetworkSettings"]["Networks"]:
-        return jsonify( result=container.attrs["NetworkSettings"]["Networks"] )
-    else:
-        return jsonify( result={} )
+@app.get("/networks/dangling")
+async def dangling_networks() -> dict[str, Any]:
+    all_networks = await asyncio.to_thread(client.networks.list, greedy=True)
+    dangling = [n for n in all_networks if not n.attrs["Containers"]]
+    return {"result": named_networks(dangling)}
 
-# Make pretty maps from Docker API:
-def named_containers(api_containers):
-    containers = {}
-    for container in api_containers:
-        containers[container.id] = container.attrs
-    return containers
 
-def named_images(api_images):
-    images = {}
-    for image in api_images:
-        images[image.id] = image.attrs
-    return images
+@app.get("/networks/used_by/{container_id}")
+async def networks_used_by(container_id: str) -> dict[str, Any]:
+    container = await asyncio.to_thread(client.containers.get, container_id)
+    return {"result": container.attrs["NetworkSettings"]["Networks"] or {}}
 
-def named_volumes(api_volumes):
-    volumes = {}
-    for volume in api_volumes:
-        volumes[volume.id] = volume.attrs
-    return volumes
 
-def named_networks(api_networks):
-    networks = {}
-    for network in api_networks:
-        networks[network.id] = network.attrs
-    return networks
+# --- Helpers ---
 
-# Main
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+
+def named_containers(api_containers: list) -> dict[str, Any]:
+    return {c.id: c.attrs for c in api_containers}
+
+
+def named_images(api_images: list) -> dict[str, Any]:
+    return {i.id: i.attrs for i in api_images}
+
+
+def named_volumes(api_volumes: list) -> dict[str, Any]:
+    return {v.id: v.attrs for v in api_volumes}
+
+
+def named_networks(api_networks: list) -> dict[str, Any]:
+    return {n.id: n.attrs for n in api_networks}
+
+
+def main() -> None:
+    uvicorn.run("app.app:app", host="0.0.0.0", port=5000)
+
+
+if __name__ == "__main__":
+    main()

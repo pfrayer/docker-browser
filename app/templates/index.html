@@ -1,50 +1,217 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>Docker Browser</title>
-        <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-        <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/docker-browser.js') }}"></script>
-    </head>
-    <body>
-      <div class="se-pre-con"></div>
-      <div id="docker-browser">
-      <button id="refresh">Refresh</button>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Browser</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <!-- Loading overlay -->
+      <transition name="fade">
+        <div v-if="loading" class="loading-overlay">
+          <div class="spinner-wrap">
+            <div class="spinner"></div>
+            <span class="spinner-text">Loading Docker objects…</span>
+          </div>
+        </div>
+      </transition>
 
-      <div id="volumes">
-        <h2>Volumes</h2>
-        <div id="volumes-active"></div>
-        <div id="volumes-dangling"></div>
+      <!-- Header -->
+      <header class="app-header">
+        <div class="brand">
+          <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 4H11V6H13V4ZM7 4H5V6H7V4ZM10 4H8V6H10V4ZM16 4H14V6H16V4ZM13 7H11V9H13V7ZM7 7H5V9H7V7ZM10 7H8V9H10V7ZM22 9.5C21.21 8.4 19.76 8.04 18.5 8.5C18.27 7.08 17.5 5.82 16.35 5L15.5 5.86C16.72 6.67 17.44 8.04 17.47 9.5H2C2.04 12.32 3.5 14.93 5.93 16.38C4.71 17.87 4.03 19.72 4 21.63H5.5C5.53 20.04 6.1 18.5 7.13 17.27C8.32 17.7 9.58 17.93 10.85 17.95H11C13.76 17.95 16.39 16.82 18.26 14.82C19.79 13.93 20.86 12.38 21.15 10.61L22 9.5Z" fill="currentColor"/>
+          </svg>
+          <h1>Docker Browser</h1>
+        </div>
+        <div class="header-actions">
+          <div class="status-badge" :class="{ 'is-active': !loading }">
+            <span class="status-dot"></span>
+            {{ loading ? 'Loading…' : 'Connected' }}
+          </div>
+          <button class="refresh-btn" @click="refresh" :disabled="loading">
+            <svg class="icon-refresh" :class="{ spinning: loading }" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 3a5 5 0 0 0-4.546 2.914.5.5 0 1 1-.908-.418A6 6 0 0 1 14 8a.5.5 0 0 1-1 0 5 5 0 0 0-5-5z"/>
+              <path d="M8 13a5 5 0 0 0 4.546-2.914.5.5 0 0 1 .908.418A6 6 0 0 1 2 8a.5.5 0 0 1 1 0 5 5 0 0 0 5 5z"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <!-- Hint banner -->
+      <transition name="slide">
+        <div v-if="!hasSelection && objectCount > 0" class="hint-banner">
+          💡 Click on any object to see related containers, images, volumes and networks
+        </div>
+      </transition>
+
+      <!-- Main grid -->
+      <div class="grid">
+
+        <!-- Containers -->
+        <section class="section section-full">
+          <div class="section-header">
+            <h2>
+              <span class="section-icon section-icon--container">⬡</span>
+              Containers
+            </h2>
+            <span class="badge" v-if="objectCount">{{ Object.keys(containers).length }} running</span>
+          </div>
+          <div class="card-list">
+            <transition-group name="card">
+              <div
+                v-for="(info, id) in containers" :key="id"
+                class="card card--container"
+                :class="{ 'card--selected': selectedType === 'container' && selectedId === id, 'card--highlighted': isHighlighted('container', id), 'card--dimmed': hasSelection && !isHighlighted('container', id) }"
+                @click="selectContainer(id)"
+              >
+                <div class="card-accent" :style="{ background: hashStringToColor(id) }"></div>
+                <div class="card-body">
+                  <div class="card-status running"></div>
+                  <div class="card-name">{{ info.Name ? info.Name.replace('/', '') : '' }}</div>
+                  <code class="card-id">{{ shortId(id) }}</code>
+                </div>
+              </div>
+            </transition-group>
+            <div
+              v-for="(info, id) in exitedContainers" :key="'e-'+id"
+              class="card card--container card--exited"
+            >
+              <div class="card-accent card-accent--exited"></div>
+              <div class="card-body">
+                <div class="card-status exited"></div>
+                <div class="card-name">{{ info.Name ? info.Name.replace('/', '') : '' }}</div>
+                <code class="card-id">{{ shortId(id) }}</code>
+              </div>
+            </div>
+          </div>
+          <div v-if="Object.keys(containers).length === 0 && Object.keys(exitedContainers).length === 0" class="empty-state">
+            No containers found
+          </div>
+        </section>
+
+        <!-- Images -->
+        <section class="section section-full">
+          <div class="section-header">
+            <h2>
+              <span class="section-icon section-icon--image">◈</span>
+              Images
+            </h2>
+            <span class="badge">{{ Object.keys(images).length }}</span>
+          </div>
+          <div class="card-list">
+            <div
+              v-for="(info, id) in images" :key="id"
+              class="card card--image"
+              :class="{ 'card--selected': selectedType === 'image' && selectedId === id, 'card--highlighted': isHighlighted('image', id), 'card--dimmed': hasSelection && !isHighlighted('image', id) }"
+              @click="selectImage(id)"
+            >
+              <div class="card-accent" :style="{ background: hashStringToColor(id) }"></div>
+              <div class="card-body">
+                <div class="card-name">{{ info.RepoTags && info.RepoTags[0] ? info.RepoTags[0] : '‹none›' }}</div>
+                <code class="card-id">{{ shortId(id.startsWith('sha256:') ? id.substring(7) : id) }}</code>
+              </div>
+            </div>
+            <div
+              v-for="(info, id) in danglingImages" :key="'d-'+id"
+              class="card card--image card--dangling"
+            >
+              <div class="card-accent card-accent--dangling"></div>
+              <div class="card-body">
+                <div class="card-name">&lt;none&gt;</div>
+                <code class="card-id">{{ shortId(id.startsWith('sha256:') ? id.substring(7) : id) }}</code>
+              </div>
+            </div>
+          </div>
+          <div v-if="Object.keys(images).length === 0 && Object.keys(danglingImages).length === 0" class="empty-state">
+            No images found
+          </div>
+        </section>
+
+        <!-- Volumes -->
+        <section class="section section-half">
+          <div class="section-header">
+            <h2>
+              <span class="section-icon section-icon--volume">◉</span>
+              Volumes
+            </h2>
+            <span class="badge">{{ Object.keys(volumes).length }}</span>
+          </div>
+          <div class="card-list">
+            <div
+              v-for="(info, name) in volumes" :key="name"
+              class="card card--volume"
+              :class="{ 'card--selected': selectedType === 'volume' && selectedId === name, 'card--highlighted': isHighlighted('volume', name), 'card--dimmed': hasSelection && !isHighlighted('volume', name) }"
+              @click="selectVolume(name)"
+            >
+              <div class="card-accent" :style="{ background: hashStringToColor(name) }"></div>
+              <div class="card-body">
+                <div class="card-name">{{ shortId(name) }}</div>
+                <code class="card-id card-id--sub">{{ info.Driver }}</code>
+              </div>
+            </div>
+            <div
+              v-for="(info, name) in danglingVolumes" :key="'dv-'+name"
+              class="card card--volume card--dangling"
+            >
+              <div class="card-accent card-accent--dangling"></div>
+              <div class="card-body">
+                <div class="card-name">{{ shortId(name) }}</div>
+                <code class="card-id card-id--sub">{{ info.Driver }}</code>
+              </div>
+            </div>
+          </div>
+          <div v-if="Object.keys(volumes).length === 0 && Object.keys(danglingVolumes).length === 0" class="empty-state">
+            No volumes found
+          </div>
+        </section>
+
+        <!-- Networks -->
+        <section class="section section-half">
+          <div class="section-header">
+            <h2>
+              <span class="section-icon section-icon--network">⬡</span>
+              Networks
+            </h2>
+            <span class="badge">{{ Object.keys(networks).length }}</span>
+          </div>
+          <div class="card-list">
+            <div
+              v-for="(info, id) in networks" :key="id"
+              class="card card--network"
+              :class="{ 'card--selected': selectedType === 'network' && selectedId === id, 'card--highlighted': isHighlighted('network', id), 'card--dimmed': hasSelection && !isHighlighted('network', id) }"
+              @click="selectNetwork(id)"
+            >
+              <div class="card-accent" :style="{ background: hashStringToColor(id) }"></div>
+              <div class="card-body">
+                <div class="card-name">{{ info.Name }}</div>
+                <code class="card-id">{{ shortId(id) }}</code>
+              </div>
+            </div>
+            <div
+              v-for="(info, id) in danglingNetworks" :key="'dn-'+id"
+              class="card card--network card--dangling"
+            >
+              <div class="card-accent card-accent--dangling"></div>
+              <div class="card-body">
+                <div class="card-name">{{ info.Name }}</div>
+                <code class="card-id">{{ shortId(id) }}</code>
+              </div>
+            </div>
+          </div>
+          <div v-if="Object.keys(networks).length === 0 && Object.keys(danglingNetworks).length === 0" class="empty-state">
+            No networks found
+          </div>
+        </section>
       </div>
+    </div>
 
-      <div id="networks">
-        <h2>Networks</h2>
-        <div id="networks-active"></div>
-        <div id="networks-dangling"></div>
-      </div>
-
-      <span class="clear"></span>
-
-      <div id="containers">
-        <h2>Containers</h2>
-        <div id="containers-active"></div>
-        <div id="containers-exited"></div>
-        <span class="clear"></span>
-      </div>
-
-      <div id="images">
-        <h2>Images</h2>
-        <div id="images-active"></div>
-        <div id="images-dangling"></div>
-        <span class="clear"></span>
-      </div>
-
-      <div id="layers">
-        <div id="layers-active"></div>
-        <div id="layers-dangling"></div>
-        <h2>Layers</h2>
-      </div>
-
-      </div>
-    </body>
+    <script type="module" src="/static/js/docker-browser.js"></script>
+  </body>
 </html>

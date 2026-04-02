@@ -1,12 +1,13 @@
 FROM python:3-alpine
-LABEL MAINTAINER "Pierre FRAYER"
-LABEL MAINTAINER_EMAIL "pfrayer@gmail.com"
 
-COPY app/ /app
+COPY pyproject.toml poetry.lock README.md /app/
 WORKDIR /app
+RUN pip install --no-cache-dir poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --only main --no-root --no-interaction
+
+COPY app/ /app/app/
+RUN poetry install --only main --no-interaction
 
 EXPOSE 5000
-
-RUN pip install -r /app/requirements.txt
-ENTRYPOINT ["python"]
-CMD ["app.py"]
+CMD ["docker-browser"]
