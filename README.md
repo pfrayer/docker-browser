@@ -2,7 +2,7 @@
 
 Visualize your Docker objects (containers, images, volumes, networks) and easily identify what uses what: which volumes and networks are used by which containers, which images are used by which containers, etc.
 
-![Docker browser](/doc/demo.gif?raw=true)
+[docker-browser.webm](https://github.com/user-attachments/assets/da53b911-6f9e-49d5-bb75-b99eba1ff592)
 
 ## Usage
 
@@ -10,6 +10,7 @@ Visualize your Docker objects (containers, images, volumes, networks) and easily
 
 ```sh
 docker run -d \
+  -n docker-browser \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -p 5000:5000 \
   pfrayer/docker-browser
@@ -24,12 +25,6 @@ poetry run python -m app.app
 
 Then open `http://localhost:5000` in your browser and click on a container to see its related objects highlighted.
 
-## API
-
-FastAPI auto-generates interactive API docs at `/docs` (Swagger UI) and `/redoc`.
-
-See also the [API documentation](./doc/README.md).
-
 ## Development
 
 ```sh
@@ -39,12 +34,3 @@ poetry run ruff check .       # lint
 poetry run ruff format .      # format
 pre-commit install            # install git hooks
 ```
-
-## TODO
-
-- API:
-    - [ ] List layers
-    - [ ] Group layers per image
-- GUI:
-    - [ ] Display layers
-    - [ ] Display link between image & layers
