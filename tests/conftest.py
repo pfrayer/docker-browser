@@ -92,6 +92,18 @@ def mock_docker_client() -> MagicMock:
     client.networks.list.return_value = [
         make_mock_network(containers={"abc123def456": {"Name": "test-container"}}),
     ]
+    client.df.return_value = {
+        "BuildCache": [
+            {
+                "ID": "bc111222333",
+                "Type": "regular",
+                "Description": "mount / from exec ...",
+                "InUse": False,
+                "Shared": False,
+                "Size": 1048576,
+            }
+        ]
+    }
     return client
 
 
