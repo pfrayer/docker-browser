@@ -37,10 +37,14 @@ const app = createApp({
     const networks = ref({});
     const danglingNetworks = ref({});
     const selectedContainer = ref(null);
+    const selectedNetwork = ref(null);
     const relatedImage = ref(null);
     const relatedVolumes = ref(new Set());
     const relatedNetworks = ref(new Set());
+    const relatedContainers = ref(new Set());
     const loading = ref(false);
+
+    const hasSelection = computed(() => selectedContainer.value || selectedNetwork.value);
 
     const objectCount = computed(() =>
       Object.keys(containers.value).length +
@@ -52,10 +56,7 @@ const app = createApp({
 
     async function fetchAll() {
       loading.value = true;
-      selectedContainer.value = null;
-      relatedImage.value = null;
-      relatedVolumes.value = new Set();
-      relatedNetworks.value = new Set();
+      clearSelection();
 
       try {
         const [c, ce, img, imgD, vol, volD, net, netD] = await Promise.all([
@@ -83,19 +84,23 @@ const app = createApp({
       }
     }
 
-    async function selectContainer(containerId) {
-      if (selectedContainer.value === containerId) {
-        selectedContainer.value = null;
-        relatedImage.value = null;
-        relatedVolumes.value = new Set();
-        relatedNetworks.value = new Set();
-        return;
-      }
-
-      selectedContainer.value = containerId;
+    function clearSelection() {
+      selectedContainer.value = null;
+      selectedNetwork.value = null;
       relatedImage.value = null;
       relatedVolumes.value = new Set();
       relatedNetworks.value = new Set();
+      relatedContainers.value = new Set();
+    }
+
+    async function selectContainer(containerId) {
+      if (selectedContainer.value === containerId) {
+        clearSelection();
+        return;
+      }
+
+      clearSelection();
+      selectedContainer.value = containerId;
 
       try {
         const [imgRes, volRes, netRes] = await Promise.all([
@@ -130,12 +135,32 @@ const app = createApp({
       }
     }
 
+    function selectNetwork(networkId) {
+      if (selectedNetwork.value === networkId) {
+        clearSelection();
+        return;
+      }
+
+      clearSelection();
+      selectedNetwork.value = networkId;
+
+      const networkInfo = networks.value[networkId];
+      if (networkInfo && networkInfo.Containers) {
+        relatedContainers.value = new Set(Object.keys(networkInfo.Containers));
+      }
+    }
+
     function isHighlighted(type, id) {
-      if (!selectedContainer.value) return false;
-      if (type === 'container') return id === selectedContainer.value;
-      if (type === 'image') return id === relatedImage.value;
-      if (type === 'volume') return relatedVolumes.value.has(id);
-      if (type === 'network') return relatedNetworks.value.has(id);
+      if (selectedContainer.value) {
+        if (type === 'container') return id === selectedContainer.value;
+        if (type === 'image') return id === relatedImage.value;
+        if (type === 'volume') return relatedVolumes.value.has(id);
+        if (type === 'network') return relatedNetworks.value.has(id);
+      }
+      if (selectedNetwork.value) {
+        if (type === 'network') return id === selectedNetwork.value;
+        if (type === 'container') return relatedContainers.value.has(id);
+      }
       return false;
     }
 
@@ -157,9 +182,12 @@ const app = createApp({
       networks,
       danglingNetworks,
       selectedContainer,
+      selectedNetwork,
+      hasSelection,
       loading,
       objectCount,
       selectContainer,
+      selectNetwork,
       isHighlighted,
       hashStringToColor,
       shortId,
