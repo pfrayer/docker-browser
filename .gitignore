@@ -4,3 +4,4 @@ venv/
 .ruff_cache/
 dist/
 *.egg-info/
+.coverage
