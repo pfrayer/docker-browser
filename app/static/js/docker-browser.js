@@ -36,15 +36,15 @@ const app = createApp({
     const danglingVolumes = ref({});
     const networks = ref({});
     const danglingNetworks = ref({});
-    const selectedContainer = ref(null);
-    const selectedNetwork = ref(null);
+    const selectedType = ref(null);
+    const selectedId = ref(null);
     const relatedImage = ref(null);
     const relatedVolumes = ref(new Set());
     const relatedNetworks = ref(new Set());
     const relatedContainers = ref(new Set());
     const loading = ref(false);
 
-    const hasSelection = computed(() => selectedContainer.value || selectedNetwork.value);
+    const hasSelection = computed(() => selectedType.value !== null);
 
     const objectCount = computed(() =>
       Object.keys(containers.value).length +
@@ -85,80 +85,107 @@ const app = createApp({
     }
 
     function clearSelection() {
-      selectedContainer.value = null;
-      selectedNetwork.value = null;
+      selectedType.value = null;
+      selectedId.value = null;
       relatedImage.value = null;
       relatedVolumes.value = new Set();
       relatedNetworks.value = new Set();
       relatedContainers.value = new Set();
     }
 
-    async function selectContainer(containerId) {
-      if (selectedContainer.value === containerId) {
+    function toggleSelection(type, id, setupFn) {
+      if (selectedType.value === type && selectedId.value === id) {
         clearSelection();
         return;
       }
-
       clearSelection();
-      selectedContainer.value = containerId;
+      selectedType.value = type;
+      selectedId.value = id;
+      setupFn();
+    }
 
-      try {
-        const [imgRes, volRes, netRes] = await Promise.all([
-          fetchJson(`/images/used_by/${containerId}`),
-          fetchJson(`/volumes/used_by/${containerId}`),
-          fetchJson(`/networks/used_by/${containerId}`),
-        ]);
+    async function selectContainer(containerId) {
+      toggleSelection('container', containerId, async () => {
+        try {
+          const [imgRes, volRes, netRes] = await Promise.all([
+            fetchJson(`/images/used_by/${containerId}`),
+            fetchJson(`/volumes/used_by/${containerId}`),
+            fetchJson(`/networks/used_by/${containerId}`),
+          ]);
 
-        if (typeof imgRes === 'string') {
-          relatedImage.value = imgRes;
-        }
-
-        const volNames = new Set();
-        if (typeof volRes === 'object') {
-          for (const key in volRes) {
-            const v = volRes[key];
-            if (v && v.Name) volNames.add(v.Name);
+          if (typeof imgRes === 'string') {
+            relatedImage.value = imgRes;
           }
-        }
-        relatedVolumes.value = volNames;
 
-        const netIds = new Set();
-        if (typeof netRes === 'object') {
-          for (const key in netRes) {
-            const n = netRes[key];
-            if (n && n.NetworkID) netIds.add(n.NetworkID);
+          const volNames = new Set();
+          if (typeof volRes === 'object') {
+            for (const key in volRes) {
+              const v = volRes[key];
+              if (v && v.Name) volNames.add(v.Name);
+            }
           }
+          relatedVolumes.value = volNames;
+
+          const netIds = new Set();
+          if (typeof netRes === 'object') {
+            for (const key in netRes) {
+              const n = netRes[key];
+              if (n && n.NetworkID) netIds.add(n.NetworkID);
+            }
+          }
+          relatedNetworks.value = netIds;
+        } catch (e) {
+          console.error('Failed to fetch related objects:', e);
         }
-        relatedNetworks.value = netIds;
-      } catch (e) {
-        console.error('Failed to fetch related objects:', e);
-      }
+      });
     }
 
     function selectNetwork(networkId) {
-      if (selectedNetwork.value === networkId) {
-        clearSelection();
-        return;
-      }
+      toggleSelection('network', networkId, () => {
+        const info = networks.value[networkId];
+        if (info && info.Containers) {
+          relatedContainers.value = new Set(Object.keys(info.Containers));
+        }
+      });
+    }
 
-      clearSelection();
-      selectedNetwork.value = networkId;
+    function selectImage(imageId) {
+      toggleSelection('image', imageId, () => {
+        const matched = new Set();
+        for (const [cId, cInfo] of Object.entries(containers.value)) {
+          if (cInfo.Image === imageId) {
+            matched.add(cId);
+          }
+        }
+        relatedContainers.value = matched;
+      });
+    }
 
-      const networkInfo = networks.value[networkId];
-      if (networkInfo && networkInfo.Containers) {
-        relatedContainers.value = new Set(Object.keys(networkInfo.Containers));
-      }
+    function selectVolume(volumeName) {
+      toggleSelection('volume', volumeName, () => {
+        const matched = new Set();
+        for (const [cId, cInfo] of Object.entries(containers.value)) {
+          if (cInfo.Mounts) {
+            for (const mount of cInfo.Mounts) {
+              if (mount.Type === 'volume' && mount.Name === volumeName) {
+                matched.add(cId);
+              }
+            }
+          }
+        }
+        relatedContainers.value = matched;
+      });
     }
 
     function isHighlighted(type, id) {
-      if (selectedContainer.value) {
-        if (type === 'container') return id === selectedContainer.value;
+      if (!hasSelection.value) return false;
+      if (type === selectedType.value && id === selectedId.value) return true;
+
+      if (selectedType.value === 'container') {
         if (type === 'image') return id === relatedImage.value;
         if (type === 'volume') return relatedVolumes.value.has(id);
         if (type === 'network') return relatedNetworks.value.has(id);
-      }
-      if (selectedNetwork.value) {
-        if (type === 'network') return id === selectedNetwork.value;
+      } else {
         if (type === 'container') return relatedContainers.value.has(id);
       }
       return false;
@@ -181,13 +208,15 @@ const app = createApp({
       danglingVolumes,
       networks,
       danglingNetworks,
-      selectedContainer,
-      selectedNetwork,
+      selectedType,
+      selectedId,
       hasSelection,
       loading,
       objectCount,
       selectContainer,
       selectNetwork,
+      selectImage,
+      selectVolume,
       isHighlighted,
       hashStringToColor,
       shortId,

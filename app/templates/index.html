@@ -47,7 +47,7 @@
       <!-- Hint banner -->
       <transition name="slide">
         <div v-if="!hasSelection && objectCount > 0" class="hint-banner">
-          💡 Click on a container or a network to see related objects
+          💡 Click on any object to see related containers, images, volumes and networks
         </div>
       </transition>
 
@@ -68,7 +68,7 @@
               <div
                 v-for="(info, id) in containers" :key="id"
                 class="card card--container"
-                :class="{ 'card--selected': selectedContainer === id, 'card--highlighted': isHighlighted('container', id), 'card--dimmed': hasSelection && !isHighlighted('container', id) }"
+                :class="{ 'card--selected': selectedType === 'container' && selectedId === id, 'card--highlighted': isHighlighted('container', id), 'card--dimmed': hasSelection && !isHighlighted('container', id) }"
                 @click="selectContainer(id)"
               >
                 <div class="card-accent" :style="{ background: hashStringToColor(id) }"></div>
@@ -109,7 +109,8 @@
             <div
               v-for="(info, id) in images" :key="id"
               class="card card--image"
-              :class="{ 'card--highlighted': isHighlighted('image', id), 'card--dimmed': hasSelection && !isHighlighted('image', id) }"
+              :class="{ 'card--selected': selectedType === 'image' && selectedId === id, 'card--highlighted': isHighlighted('image', id), 'card--dimmed': hasSelection && !isHighlighted('image', id) }"
+              @click="selectImage(id)"
             >
               <div class="card-accent" :style="{ background: hashStringToColor(id) }"></div>
               <div class="card-body">
@@ -146,7 +147,8 @@
             <div
               v-for="(info, name) in volumes" :key="name"
               class="card card--volume"
-              :class="{ 'card--highlighted': isHighlighted('volume', name), 'card--dimmed': hasSelection && !isHighlighted('volume', name) }"
+              :class="{ 'card--selected': selectedType === 'volume' && selectedId === name, 'card--highlighted': isHighlighted('volume', name), 'card--dimmed': hasSelection && !isHighlighted('volume', name) }"
+              @click="selectVolume(name)"
             >
               <div class="card-accent" :style="{ background: hashStringToColor(name) }"></div>
               <div class="card-body">
@@ -183,7 +185,7 @@
             <div
               v-for="(info, id) in networks" :key="id"
               class="card card--network"
-              :class="{ 'card--selected': selectedNetwork === id, 'card--highlighted': isHighlighted('network', id), 'card--dimmed': hasSelection && !isHighlighted('network', id) }"
+              :class="{ 'card--selected': selectedType === 'network' && selectedId === id, 'card--highlighted': isHighlighted('network', id), 'card--dimmed': hasSelection && !isHighlighted('network', id) }"
               @click="selectNetwork(id)"
             >
               <div class="card-accent" :style="{ background: hashStringToColor(id) }"></div>
