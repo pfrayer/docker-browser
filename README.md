@@ -8,8 +8,8 @@ Visualize your Docker objects (containers, images, volumes, networks) and easily
 
 ### Docker
 
-```sh
-docker run -d \
+```shell
+$ docker run -d \
   -n docker-browser \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -p 5000:5000 \
@@ -18,19 +18,19 @@ docker run -d \
 
 ### Local development
 
-```sh
-poetry install
-poetry run python -m app.app
+```shell
+$ poetry install
+$ poetry run python -m app.app
 ```
 
 Then open `http://localhost:5000` in your browser and click on a container to see its related objects highlighted.
 
 ## Development
 
-```sh
-poetry install               # install all deps (including dev)
-poetry run pytest             # run tests
-poetry run ruff check .       # lint
-poetry run ruff format .      # format
-pre-commit install            # install git hooks
+```shell
+$ poetry install                # install all deps (including dev)
+$ poetry run pytest             # run tests
+$ poetry run ruff check .       # lint
+$ poetry run ruff format .      # format
+$ pre-commit install            # install git hooks
 ```
