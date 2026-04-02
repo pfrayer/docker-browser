@@ -27,6 +27,7 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 # --- Routes ---
 
+
 @app.get("/")
 async def root() -> FileResponse:
     return FileResponse(BASE_DIR / "templates" / "index.html")
@@ -107,6 +108,7 @@ async def networks_used_by(container_id: str) -> dict[str, Any]:
 
 # --- Helpers ---
 
+
 def named_containers(api_containers: list) -> dict[str, Any]:
     return {c.id: c.attrs for c in api_containers}
 
@@ -123,5 +125,9 @@ def named_networks(api_networks: list) -> dict[str, Any]:
     return {n.id: n.attrs for n in api_networks}
 
 
+def main() -> None:
+    uvicorn.run("app.app:app", host="0.0.0.0", port=5000)
+
+
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=True)
+    main()

@@ -1,0 +1,73 @@
+[project]
+name = "docker-browser"
+version = "2.0.0"
+description = "Visualize Docker objects and their relationships"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "Pierre FRAYER", email = "pfrayer+github@gmail.com" },
+]
+
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.34,<1",
+    "docker>=7,<8",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+    "pytest-asyncio>=0.25,<1",
+    "pytest-cov>=6,<7",
+    "httpx>=0.28,<1",
+    "ruff>=0.11,<1",
+    "pre-commit>=4,<5",
+]
+
+[project.scripts]
+docker-browser = "app.app:main"
+
+[tool.poetry]
+packages = [{ include = "app" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8,<9"
+pytest-asyncio = ">=0.25,<1"
+pytest-cov = ">=6,<7"
+httpx = ">=0.28,<1"
+ruff = ">=0.11,<1"
+pre-commit = ">=4,<5"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "RUF",   # ruff-specific rules
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=100"
+
+[tool.coverage.report]
+exclude_lines = [
+    "if __name__ == .__main__.",
+]
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"
