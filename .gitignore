@@ -5,3 +5,4 @@ venv/
 dist/
 *.egg-info/
 .coverage
+.python-version
