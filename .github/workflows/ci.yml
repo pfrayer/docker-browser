@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.15"
 
       - name: Install Poetry
         run: pip install poetry
@@ -30,6 +30,10 @@ jobs:
 
       - name: Test with coverage
         run: poetry run pytest
+
+      # the image is only pushed from master: build it on every PR first
+      - name: Build Docker image
+        run: docker build --tag docker-browser:ci .
 
   publish:
     needs: test
