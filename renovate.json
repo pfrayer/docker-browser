@@ -5,6 +5,13 @@
   ],
   "packageRules": [
     {
+      "description": "Every merge to master republishes the image: bring action updates in one PR",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub Actions"
+    },
+    {
       "description": "The image (Dockerfile) and CI (setup-python) must run the same Python: bump them together",
       "matchDepNames": [
         "python"
