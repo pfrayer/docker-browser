@@ -1,8 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "schedule:earlyMondays"
   ],
+  "timezone": "Europe/Paris",
   "packageRules": [
     {
       "description": "Every merge to master republishes the image: bring action updates in one PR",
@@ -17,6 +19,17 @@
         "python"
       ],
       "groupName": "python"
+    },
+    {
+      "description": "Every merge to master republishes the image: bring minor and patch Python dependency updates in one PR",
+      "matchManagers": [
+        "poetry"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Python dependencies (non-major)"
     }
   ]
 }
